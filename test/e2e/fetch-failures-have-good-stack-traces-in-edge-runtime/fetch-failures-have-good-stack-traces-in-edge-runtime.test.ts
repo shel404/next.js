@@ -27,7 +27,7 @@ describe('fetch failures have good stack traces in edge runtime', () => {
     } else if (isNextDev) {
       expect(next.cliOutput).toContain('src/fetcher.js')
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, { pageResponseCode: 500 })
       const source = await getRedboxSource(browser)
 
       expect(source).toContain('async function anotherFetcher(...args)')

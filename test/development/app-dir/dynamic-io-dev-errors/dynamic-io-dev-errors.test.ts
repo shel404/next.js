@@ -94,7 +94,7 @@ describe('Dynamic IO Dev Errors', () => {
       ])
     )
     const { browser, session } = sandbox
-    await assertHasRedbox(browser)
+    await assertHasRedbox(browser, { pageResponseCode: 500 })
     const redbox = {
       description: await getRedboxDescription(browser),
       source: await getRedboxSource(browser),

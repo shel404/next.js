@@ -917,7 +917,10 @@ function runTests(mode) {
     it('should show invalid src error', async () => {
       const browser = await webdriver(appPort, '/invalid-src')
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, {
+        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
+      })
       expect(await getRedboxHeader(browser)).toContain(
         'Invalid src prop (https://google.com/test.png) on `next/image`, hostname "google.com" is not configured under images in your `next.config.js`'
       )
@@ -926,7 +929,10 @@ function runTests(mode) {
     it('should show invalid src error when protocol-relative', async () => {
       const browser = await webdriver(appPort, '/invalid-src-proto-relative')
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, {
+        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
+      })
       expect(await getRedboxHeader(browser)).toContain(
         'Failed to parse src "//assets.example.com/img.jpg" on `next/image`, protocol-relative URL (//) must be changed to an absolute URL (http:// or https://)'
       )
@@ -934,7 +940,10 @@ function runTests(mode) {
 
     it('should show invalid src with leading space', async () => {
       const browser = await webdriver(appPort, '/invalid-src-leading-space')
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, {
+        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
+      })
       expect(await getRedboxHeader(browser)).toContain(
         'Image with src " /test.jpg" cannot start with a space or control character.'
       )
@@ -942,7 +951,10 @@ function runTests(mode) {
 
     it('should show invalid src with trailing space', async () => {
       const browser = await webdriver(appPort, '/invalid-src-trailing-space')
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, {
+        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
+      })
       expect(await getRedboxHeader(browser)).toContain(
         'Image with src "/test.png " cannot end with a space or control character.'
       )
@@ -951,7 +963,10 @@ function runTests(mode) {
     it('should show error when string src and placeholder=blur and blurDataURL is missing', async () => {
       const browser = await webdriver(appPort, '/invalid-placeholder-blur')
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, {
+        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
+      })
       expect(await getRedboxHeader(browser)).toContain(
         `Image with src "/test.png" has "placeholder='blur'" property but is missing the "blurDataURL" property.`
       )
@@ -960,7 +975,10 @@ function runTests(mode) {
     it('should show error when invalid width prop', async () => {
       const browser = await webdriver(appPort, '/invalid-width')
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, {
+        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
+      })
       expect(await getRedboxHeader(browser)).toContain(
         `Image with src "/test.jpg" has invalid "width" property. Expected a numeric value in pixels but received "100%".`
       )
@@ -969,7 +987,10 @@ function runTests(mode) {
     it('should show error when invalid Infinity width prop', async () => {
       const browser = await webdriver(appPort, '/invalid-Infinity-width')
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, {
+        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
+      })
       expect(await getRedboxHeader(browser)).toContain(
         `Image with src "/test.jpg" has invalid "width" property. Expected a numeric value in pixels but received "Infinity".`
       )
@@ -978,7 +999,10 @@ function runTests(mode) {
     it('should show error when invalid height prop', async () => {
       const browser = await webdriver(appPort, '/invalid-height')
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, {
+        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
+      })
       expect(await getRedboxHeader(browser)).toContain(
         `Image with src "/test.jpg" has invalid "height" property. Expected a numeric value in pixels but received "50vh".`
       )
@@ -997,7 +1021,10 @@ function runTests(mode) {
     it('should show error when missing width prop', async () => {
       const browser = await webdriver(appPort, '/missing-width')
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, {
+        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
+      })
       expect(await getRedboxHeader(browser)).toContain(
         `Image with src "/test.jpg" is missing required "width" property.`
       )
@@ -1006,7 +1033,10 @@ function runTests(mode) {
     it('should show error when missing height prop', async () => {
       const browser = await webdriver(appPort, '/missing-height')
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, {
+        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
+      })
       expect(await getRedboxHeader(browser)).toContain(
         `Image with src "/test.jpg" is missing required "height" property.`
       )
@@ -1015,7 +1045,10 @@ function runTests(mode) {
     it('should show error when width prop on fill image', async () => {
       const browser = await webdriver(appPort, '/invalid-fill-width')
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, {
+        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
+      })
       expect(await getRedboxHeader(browser)).toContain(
         `Image with src "/wide.png" has both "width" and "fill" properties.`
       )
@@ -1024,7 +1057,10 @@ function runTests(mode) {
     it('should show error when CSS position changed on fill image', async () => {
       const browser = await webdriver(appPort, '/invalid-fill-position')
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, {
+        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
+      })
       expect(await getRedboxHeader(browser)).toContain(
         `Image with src "/wide.png" has both "fill" and "style.position" properties. Images with "fill" always use position absolute - it cannot be modified.`
       )
@@ -1036,7 +1072,10 @@ function runTests(mode) {
         '/invalid-placeholder-blur-static'
       )
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, {
+        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
+      })
       expect(await getRedboxHeader(browser)).toMatch(
         /Image with src "(.*)bmp" has "placeholder='blur'" property but is missing the "blurDataURL" property/
       )
