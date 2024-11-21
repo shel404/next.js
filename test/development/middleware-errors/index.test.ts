@@ -54,7 +54,7 @@ describe('middleware - development errors', () => {
 
     it('renders the error correctly and recovers', async () => {
       const browser = await next.browser('/')
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, { pageResponseCode: 500 })
       await next.patchFile('middleware.js', `export default function () {}`)
       await assertNoRedbox(browser)
     })
@@ -158,7 +158,9 @@ describe('middleware - development errors', () => {
 
     it('renders the error correctly and recovers', async () => {
       const browser = await next.browser('/')
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, {
+        pageResponseCode: isTurbopack ? 500 : [500, 500],
+      })
 
       const lengthOfLogs = next.cliOutput.length
 
@@ -210,7 +212,7 @@ describe('middleware - development errors', () => {
 
     it('renders the error correctly and recovers', async () => {
       const browser = await next.browser('/')
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, { pageResponseCode: 500 })
       const source = await getRedboxSource(browser)
       expect(source).toContain(`throw new Error('booooom!')`)
       expect(source).toContain('middleware.js')
@@ -315,7 +317,7 @@ describe('middleware - development errors', () => {
 
     it('renders the error correctly and recovers', async () => {
       const browser = await next.browser('/')
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, { pageResponseCode: 500 })
       expect(
         await browser.elementByCss('#nextjs__container_errors_desc').text()
       ).toEqual('Failed to compile')

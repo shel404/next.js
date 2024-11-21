@@ -90,7 +90,7 @@ describe('server-side dev errors', () => {
           '\n> 6 |   missingVar;return {'
       )
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, { pageResponseCode: 500 })
 
       expect(await getRedboxSource(browser)).toContain('missingVar')
       await fs.writeFile(gspPage, content, { flush: true })
@@ -143,7 +143,7 @@ describe('server-side dev errors', () => {
           '\n> 6 |   missingVar;return {'
       )
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, { pageResponseCode: 500 })
 
       expect(await getRedboxSource(browser)).toContain('missingVar')
       await fs.writeFile(gsspPage, content)
@@ -196,11 +196,11 @@ describe('server-side dev errors', () => {
           '\n> 6 |   missingVar;return {'
       )
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, { pageResponseCode: 500 })
 
       expect(await getRedboxSource(browser)).toContain('missingVar')
       await fs.writeFile(dynamicGsspPage, content)
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, { pageResponseCode: 500 })
     } finally {
       await fs.writeFile(dynamicGsspPage, content)
     }
@@ -249,11 +249,11 @@ describe('server-side dev errors', () => {
           "\n> 2 |   missingVar;res.status(200).json({ hello: 'world' })"
       )
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, { pageResponseCode: 500 })
 
       expect(await getRedboxSource(browser)).toContain('missingVar')
       await fs.writeFile(apiPage, content)
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, { pageResponseCode: 500 })
     } finally {
       await fs.writeFile(apiPage, content)
     }
@@ -305,11 +305,11 @@ describe('server-side dev errors', () => {
           '\n> 2 |   missingVar;res.status(200).json({ slug: req.query.slug })'
       )
 
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, { pageResponseCode: 500 })
 
       expect(await getRedboxSource(browser)).toContain('missingVar')
       await fs.writeFile(dynamicApiPage, content)
-      await assertHasRedbox(browser)
+      await assertHasRedbox(browser, { pageResponseCode: 500 })
     } finally {
       await fs.writeFile(dynamicApiPage, content)
     }

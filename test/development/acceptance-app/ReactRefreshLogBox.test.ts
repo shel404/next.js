@@ -10,7 +10,7 @@ import {
 import path from 'path'
 import { outdent } from 'outdent'
 
-describe.each(['default', 'turbo'])('ReactRefreshLogBox app %s', () => {
+describe.each(['default', 'turbo'])('ReactRefreshLogBox app %s', (mode) => {
   const { next, isTurbopack } = nextTestSetup({
     files: new FileRef(path.join(__dirname, 'fixtures', 'default-template')),
     skipStart: true,
@@ -85,7 +85,7 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox app %s', () => {
       `
     )
 
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({ pageResponseCode: 500 })
     if (process.platform === 'win32') {
       expect(await session.getRedboxSource()).toMatchSnapshot()
     } else {
@@ -303,7 +303,9 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox app %s', () => {
       `
     )
 
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({
+      pageResponseCode: mode === 'turbo' ? undefined : 500,
+    })
     expect(await session.getRedboxSource()).toMatchSnapshot()
 
     await session.patch(
@@ -818,7 +820,7 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox app %s', () => {
     )
     const { session, browser } = sandbox
 
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({ pageResponseCode: 500 })
 
     // Should still show the errored line in source code
     const source = await session.getRedboxSource()
@@ -856,7 +858,7 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox app %s', () => {
     )
     const { session, browser } = sandbox
 
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({ pageResponseCode: 500 })
 
     // Should still show the errored line in source code
     const source = await session.getRedboxSource()
@@ -919,7 +921,7 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox app %s', () => {
     )
     const { session, browser } = sandbox
 
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({ pageResponseCode: 500 })
 
     // Should still show the errored line in source code
     const source = await session.getRedboxSource()
@@ -963,7 +965,7 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox app %s', () => {
     )
     const { session, browser } = sandbox
 
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({ pageResponseCode: 500 })
 
     // Remove error
     await session.patch(
@@ -990,7 +992,7 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox app %s', () => {
       `
     )
 
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({ pageResponseCode: 500 })
   })
 
   test('Import trace when module not found in layout', async () => {
@@ -1021,7 +1023,7 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox app %s', () => {
     expect(await session.getRedboxSource()).toMatchSnapshot()
   })
 
-  test("Can't resolve @import in CSS file", async () => {
+  it("Can't resolve @import in CSS file", async () => {
     await using sandbox = await createSandbox(
       next,
       new Map([
@@ -1047,7 +1049,10 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox app %s', () => {
     )
 
     // Wait for patch to apply and new error to show.
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({
+      // TODO(veil): Why are there 4 navigations? When run in isolated app, we only see one (that may be cleared by hot-reloader-client.ts).
+      pageResponseCode: [500, 500, 500, 500],
+    })
     if (isTurbopack) {
       expect(await session.getRedboxSource()).toEqual(outdent`
           ./app/styles2.css:1:2
@@ -1077,7 +1082,9 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox app %s', () => {
       const { session } = sandbox
 
       await next.patchFile('index.js', "throw new Error('module error')")
-      await session.assertHasRedbox()
+      await session.assertHasRedbox({
+        fixmeStackFramesHaveBrokenSourcemaps: true,
+      })
       await next.patchFile(
         'index.js',
         'export default function Page() {return <p>hello world</p>}'
@@ -1119,7 +1126,9 @@ export default function Home() {
     await browser.elementByCss('#trigger-action').click()
 
     // Wait for patch to apply and new error to show.
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({
+      fixmeStackFramesHaveBrokenSourcemaps: true,
+    })
     expect(await session.getRedboxSource()).toMatchInlineSnapshot(`
         "app/actions.ts (4:9) @ serverAction
 
@@ -1163,7 +1172,9 @@ export default function Home() {
     await browser.elementByCss('#trigger-action').click()
 
     // Wait for patch to apply and new error to show.
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({
+      fixmeStackFramesHaveBrokenSourcemaps: true,
+    })
     await retry(async () => {
       expect(await session.getRedboxSource()).toMatchInlineSnapshot(`
         "app/actions.ts (4:9) @ serverAction
@@ -1201,7 +1212,7 @@ export default function Home() {
     )
     const { session, browser } = sandbox
 
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({ pageResponseCode: 500 })
 
     let stack = next.normalizeTestDirContent(
       await getRedboxCallStackCollapsed(browser)

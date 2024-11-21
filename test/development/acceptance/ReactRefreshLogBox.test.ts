@@ -80,7 +80,7 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox %s', () => {
       `
     )
 
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({ pageResponseCode: 500 })
     expect(await session.getRedboxSource()).toMatchSnapshot()
   })
 
@@ -628,7 +628,7 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox %s', () => {
     ).toBe(null)
   })
 
-  test('non-Error errors are handled properly', async () => {
+  it('non-Error errors are handled properly', async () => {
     await using sandbox = await createSandbox(next)
     const { session } = sandbox
 
@@ -644,7 +644,7 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox %s', () => {
       `
     )
 
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({ pageResponseCode: 500 })
     expect(await session.getRedboxDescription()).toMatchInlineSnapshot(
       `"Error: {"a":1,"b":"x"}"`
     )
@@ -674,7 +674,11 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox %s', () => {
         }
       `
     )
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({
+      pageResponseCode:
+        // Includes prior 500
+        [500, 500],
+    })
     expect(await session.getRedboxDescription()).toContain(
       `Error: class Hello {`
     )
@@ -702,7 +706,11 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox %s', () => {
         }
       `
     )
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({
+      pageResponseCode:
+        // Includes prior 500s
+        [500, 500, 500],
+    })
     expect(await session.getRedboxDescription()).toMatchInlineSnapshot(
       `"Error: string error"`
     )
@@ -730,7 +738,11 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox %s', () => {
         }
       `
     )
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({
+      pageResponseCode:
+        // Includes prior 500s
+        [500, 500, 500, 500],
+    })
     expect(await session.getRedboxDescription()).toContain(
       `Error: A null error was thrown`
     )
@@ -792,7 +804,7 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox %s', () => {
       ])
     )
     const { session, browser } = sandbox
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({ pageResponseCode: 500 })
     let callStackFrames = await browser.elementsByCss(
       '[data-nextjs-call-stack-frame]'
     )
@@ -820,7 +832,7 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox %s', () => {
       ])
     )
     const { session, browser } = sandbox
-    await session.assertHasRedbox()
+    await session.assertHasRedbox({ pageResponseCode: 500 })
 
     // Should still show the errored line in source code
     const source = await session.getRedboxSource()
