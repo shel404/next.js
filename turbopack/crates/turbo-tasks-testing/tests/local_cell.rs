@@ -4,7 +4,7 @@
 
 use anyhow::Result;
 use turbo_tasks::{
-    debug::ValueDebug, test_helpers::current_task_for_testing, ResolvedValue, ValueDefault, Vc,
+    debug::ValueDebug, test_helpers::current_task_for_testing, NonLocalValue, ValueDefault, Vc,
 };
 use turbo_tasks_testing::{register, run, Registration};
 
@@ -114,7 +114,7 @@ struct Untracked {
     cell: Vc<u32>,
 }
 
-unsafe impl ResolvedValue for Untracked {}
+unsafe impl NonLocalValue for Untracked {}
 
 impl PartialEq for Untracked {
     fn eq(&self, other: &Self) -> bool {
