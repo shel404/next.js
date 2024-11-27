@@ -788,14 +788,23 @@ export function createPatchedFetcher(
                 if (entry.isStale) {
                   workStore.pendingRevalidates ??= {}
                   if (!workStore.pendingRevalidates[cacheKey]) {
-                    workStore.pendingRevalidates[cacheKey] = doOriginalFetch(
-                      true
-                    )
-                      .catch(console.error)
+                    const pendingRevalidate = doOriginalFetch(true)
+                      .then(async (response) => ({
+                        body: await response.arrayBuffer(),
+                        headers: response.headers,
+                        status: response.status,
+                        statusText: response.statusText,
+                      }))
                       .finally(() => {
                         workStore.pendingRevalidates ??= {}
                         delete workStore.pendingRevalidates[cacheKey || '']
                       })
+
+                    // Attach the empty catch here so we don't get a "unhandled
+                    // promise rejection" warning.
+                    pendingRevalidate.catch(console.error)
+
+                    workStore.pendingRevalidates[cacheKey] = pendingRevalidate
                   }
                 }
 
@@ -895,16 +904,16 @@ export function createPatchedFetcher(
         if (cacheKey && isForegroundRevalidate) {
           const pendingRevalidateKey = cacheKey
           workStore.pendingRevalidates ??= {}
-          const pendingRevalidate =
+          let pendingRevalidate =
             workStore.pendingRevalidates[pendingRevalidateKey]
 
           if (pendingRevalidate) {
-            const revalidatedResult: {
+            const revalidatedResult = (await pendingRevalidate) as {
               body: ArrayBuffer
               headers: Headers
               status: number
               statusText: string
-            } = await pendingRevalidate
+            }
             return new Response(revalidatedResult.body, {
               headers: revalidatedResult.headers,
               status: revalidatedResult.status,
@@ -922,7 +931,7 @@ export function createPatchedFetcher(
           // making it compatible with dynamicIO.
           const pendingResponse = doOriginalFetch(true, cacheReasonOverride)
 
-          const nextRevalidate = pendingResponse
+          pendingRevalidate = pendingResponse
             .then(async (response) => {
               // Clone the response here. It'll run first because we attached
               // the resolve before we returned below. We have to clone it
@@ -949,9 +958,9 @@ export function createPatchedFetcher(
 
           // Attach the empty catch here so we don't get a "unhandled promise
           // rejection" warning
-          nextRevalidate.catch(() => {})
+          pendingRevalidate.catch(() => {})
 
-          workStore.pendingRevalidates[pendingRevalidateKey] = nextRevalidate
+          workStore.pendingRevalidates[pendingRevalidateKey] = pendingRevalidate
 
           return pendingResponse
         } else {
