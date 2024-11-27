@@ -32,7 +32,7 @@ describe('getDynamicHTMLPostponedState', () => {
     )
 
     expect(state).toMatchInlineSnapshot(
-      `"169:39[["slug","%%drp:slug:e9615126684e5%%"]]{"%%drp:slug:e9615126684e5%%":"%%drp:slug:e9615126684e5%%","nested":{"%%drp:slug:e9615126684e5%%":"%%drp:slug:e9615126684e5%%"}}{"store":{"fetch":{},"cache":{"1":{"value":"aGVsbG8=","tags":[],"stale":0,"timestamp":0,"expire":0,"revalidate":0}}}}"`
+      `"169:39[["slug","%%drp:slug:e9615126684e5%%"]]{"%%drp:slug:e9615126684e5%%":"%%drp:slug:e9615126684e5%%","nested":{"%%drp:slug:e9615126684e5%%":"%%drp:slug:e9615126684e5%%"}}eJwlibEKg0AQBf/l1VfELiykvj+wEYvNZdWDE+V2I4Fj/100zcDMNKhtVUANk1haQM0DEqflbt2Fg8tXQODY6zs+XwgwnhU0jAFqXAT0CLC8ihqv+23y23P9jyoHl/xhu9Td/QSgqiXb"`
     )
   })
 
