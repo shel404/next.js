@@ -172,6 +172,10 @@ impl PartialEq for Effects {
 impl Eq for Effects {}
 
 impl Effects {
+    pub fn is_empty(&self) -> bool {
+        self.effects.is_empty()
+    }
+
     /// Applies all effects that have been captured by this struct.
     pub async fn apply(&self) -> Result<()> {
         let span = tracing::info_span!("apply effects", count = self.effects.len());
