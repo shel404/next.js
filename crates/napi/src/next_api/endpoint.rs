@@ -1,4 +1,4 @@
-use std::{ops::Deref, sync::Arc};
+use std::{fs, ops::Deref, path::PathBuf, sync::Arc};
 
 use anyhow::Result;
 use napi::{bindgen_prelude::External, JsFunction};
@@ -162,6 +162,35 @@ pub async fn endpoint_write_to_disk(
             } = &*operation.strongly_consistent().await?;
             assert!(written.is_none() || !effects.is_empty());
             effects.apply().await?;
+            if let Some(written) = written {
+                match &**written {
+                    WrittenEndpoint::NodeJs {
+                        server_paths,
+                        client_paths,
+                        ..
+                    } => {
+                        let paths = server_paths
+                            .iter()
+                            .map(|p| p.path.clone())
+                            .chain(client_paths.iter().map(|p| p.as_str().to_string()))
+                            .collect::<Vec<_>>();
+                        let root = PathBuf::from(".next");
+                        if !paths.is_empty() && fs::exists(root.join(&paths[0])).unwrap() {
+                            let non_existing_paths = paths
+                                .into_iter()
+                                .filter(|path| !fs::exists(root.join(path)).unwrap_or(false))
+                                .collect::<Vec<_>>();
+                            if !non_existing_paths.is_empty() {
+                                println!(
+                                    "The following paths do not exist: {:#?}",
+                                    non_existing_paths
+                                );
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
 
             Ok((written.clone(), issues.clone(), diagnostics.clone()))
         })
