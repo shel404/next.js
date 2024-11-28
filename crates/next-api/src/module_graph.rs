@@ -6,12 +6,15 @@ use std::{
 use anyhow::{Context, Result};
 use next_core::{
     mode::NextMode,
-    next_client_reference::{find_server_entries, ServerEntries},
+    next_client_reference::{
+        find_server_entries, ClientReference, ClientReferenceGraphResult, ClientReferenceType,
+        ServerEntries, VisitedClientReferenceGraphNodes,
+    },
     next_manifests::ActionLayer,
 };
 use petgraph::{
     graph::{DiGraph, NodeIndex},
-    visit::Dfs,
+    visit::{Dfs, VisitMap, Visitable},
 };
 use tracing::Instrument;
 use turbo_tasks::{
@@ -25,6 +28,7 @@ use turbopack_core::{
 };
 
 use crate::{
+    client_references::{map_client_references, ClientReferenceMapType, ClientReferencesSet},
     dynamic_imports::{map_next_dynamic, DynamicImports},
     project::Project,
     server_actions::{map_server_actions, to_rsc_context, AllActions, AllModuleActions},
@@ -33,6 +37,14 @@ use crate::{
 #[turbo_tasks::value(transparent)]
 #[derive(Clone, Debug)]
 struct SingleModuleGraphs(pub Vec<ResolvedVc<SingleModuleGraph>>);
+
+#[derive(PartialEq, Eq, Debug)]
+pub enum GraphTraversalAction {
+    /// Continue visiting children
+    Continue,
+    /// Skip the immediate children
+    Skip,
+}
 
 #[turbo_tasks::value(cell = "new", eq = "manual", into = "new")]
 #[derive(Clone, Debug, Default)]
@@ -109,6 +121,7 @@ impl SingleModuleGraph {
             .map(move |idx| (idx, *self.graph.node_weight(idx).unwrap()))
     }
 
+    /// Traverses all reachable nodes (once)
     pub fn traverse_from_entry(
         &self,
         entry: ResolvedVc<Box<dyn Module>>,
@@ -121,6 +134,40 @@ impl SingleModuleGraph {
             let weight = *self.graph.node_weight(nx).unwrap();
             visitor(weight);
         }
+        Ok(())
+    }
+
+    /// Traverses all reachable nodes (once) and calls the visitor with the edge source and target
+    pub fn traverse_edges_from_entry(
+        &self,
+        entry: ResolvedVc<Box<dyn Module>>,
+        mut visitor: impl FnMut(
+            (
+                Option<ResolvedVc<Box<dyn Module>>>,
+                ResolvedVc<Box<dyn Module>>,
+            ),
+        ) -> GraphTraversalAction,
+    ) -> Result<()> {
+        let graph = &self.graph;
+        let entry_node = self.get_entry(entry)?;
+
+        let mut stack = vec![entry_node];
+        let mut discovered = graph.visit_map();
+        visitor((None, entry));
+
+        while let Some(node) = stack.pop() {
+            let node_weight = *graph.node_weight(node).unwrap();
+            if discovered.visit(node) {
+                for succ in graph.neighbors(node) {
+                    let succ_weight = *graph.node_weight(succ).unwrap();
+                    let action = visitor((Some(node_weight), succ_weight));
+                    if !discovered.is_visited(&succ) && action == GraphTraversalAction::Continue {
+                        stack.push(succ);
+                    }
+                }
+            }
+        }
+
         Ok(())
     }
 }
@@ -356,6 +403,119 @@ impl ServerActionsGraph {
     }
 }
 
+#[turbo_tasks::value]
+pub struct ClientReferencesGraph {
+    is_single_page: bool,
+    graph: ResolvedVc<SingleModuleGraph>,
+    /// List of client references (modules that entries into the client graph)
+    data: ResolvedVc<ClientReferencesSet>,
+}
+
+#[turbo_tasks::value_impl]
+impl ClientReferencesGraph {
+    #[turbo_tasks::function]
+    pub async fn new_with_entries(
+        graph: ResolvedVc<SingleModuleGraph>,
+        is_single_page: bool,
+    ) -> Result<Vc<Self>> {
+        // TODO if is_single_page, then perform the graph traversal below in map_client_references
+        // already, which saves us a traversal.
+        let mapped = map_client_references(*graph);
+
+        // TODO shrink graph here
+
+        Ok(Self {
+            is_single_page,
+            graph,
+            data: mapped.to_resolved().await?,
+        }
+        .cell())
+    }
+
+    #[turbo_tasks::function]
+    pub async fn get_client_references_for_endpoint(
+        &self,
+        entry: ResolvedVc<Box<dyn Module>>,
+    ) -> Result<Vc<ClientReferenceGraphResult>> {
+        let span = tracing::info_span!("collect client references for endpoint");
+        async move {
+            let data = &*self.data.await?;
+            let graph = &*self.graph.await?;
+
+            let mut client_references: Vec<ClientReference> = vec![];
+            // Make sure None (for the various internal next/dist/esm/client/components/*) is
+            // listed first
+            let mut client_references_by_server_component =
+                FxIndexMap::from_iter([(None, Vec::new())]);
+
+            // module -> the parent server component
+            let mut state_map = HashMap::new();
+            graph.traverse_edges_from_entry(entry, |(parent_module, module)| {
+                let Some(parent_module) = parent_module else {
+                    return GraphTraversalAction::Continue;
+                };
+
+                let module_type = data.get(&module);
+                let parent_server_component =
+                    if let Some(ClientReferenceMapType::ServerComponent(module)) = module_type {
+                        Some(*module)
+                    } else {
+                        state_map.get(&parent_module).copied().flatten()
+                    };
+
+                state_map.insert(module, parent_server_component);
+
+                match module_type {
+                    Some(ClientReferenceMapType::EcmascriptClientReference(module)) => {
+                        let client_reference: ClientReference = ClientReference {
+                            server_component: parent_server_component,
+                            ty: ClientReferenceType::EcmascriptClientReference {
+                                parent_module,
+                                module: *module,
+                            },
+                        };
+                        client_references.push(client_reference);
+                        client_references_by_server_component
+                            .entry(parent_server_component)
+                            .or_insert_with(Vec::new)
+                            .push(*module);
+                        GraphTraversalAction::Skip
+                    }
+                    Some(ClientReferenceMapType::CssClientReference(module)) => {
+                        let client_reference = ClientReference {
+                            server_component: parent_server_component,
+                            ty: ClientReferenceType::CssClientReference(*module),
+                        };
+                        client_references.push(client_reference);
+                        GraphTraversalAction::Skip
+                    }
+                    Some(ClientReferenceMapType::ServerComponent(_)) | None => {
+                        GraphTraversalAction::Continue
+                    }
+                }
+            })?;
+
+            let ServerEntries {
+                server_utils,
+                server_component_entries,
+            } = &*find_server_entries(*entry).await?;
+            Ok(ClientReferenceGraphResult {
+                client_references,
+                client_references_by_server_component,
+                server_utils: server_utils.clone(),
+                server_component_entries: server_component_entries.clone(),
+                // TODO remove
+                visited_nodes: VisitedClientReferenceGraphNodes::empty()
+                    .to_resolved()
+                    .await?,
+            }
+            .cell())
+        }
+        .instrument(span)
+        .await
+    }
+}
+
 /// The consumers of this shoudln't need to care about the exact contents since it's abstracted away
 /// by the accessor functions, but
 /// - In dev, contains information about the modules of the current endpoint only
@@ -364,6 +524,7 @@ impl ServerActionsGraph {
 pub struct ReducedGraphs {
     next_dynamic: Vec<ResolvedVc<NextDynamicGraph>>,
     server_actions: Vec<ResolvedVc<ServerActionsGraph>>,
+    client_references: Vec<ResolvedVc<ClientReferencesGraph>>,
     // TODO add other graphs
 }
 
@@ -434,6 +595,38 @@ impl ReducedGraphs {
         .instrument(span)
         .await
     }
+
+    /// Returns the client references for the given page.
+    #[turbo_tasks::function]
+    pub async fn get_client_references_for_endpoint(
+        &self,
+        entry: Vc<Box<dyn Module>>,
+    ) -> Result<Vc<ClientReferenceGraphResult>> {
+        let span = tracing::info_span!("collect all client references for endpoint");
+        async move {
+            if let [graph] = &self.client_references[..] {
+                // Just a single graph, no need to merge results
+                Ok(graph.get_client_references_for_endpoint(entry))
+            } else {
+                todo!("get_client_references_for_endpoint multiple");
+                // let result = self
+                //     .client_references
+                //     .iter()
+                //     .map(|graph| async move {
+                //         Ok(graph
+                //             .get_client_references_for_endpoint(entry)
+                //             .await?
+                //             .clone_value())
+                //     })
+                //     .try_flat_join()
+                //     .await?;
+
+                // Ok(Vc::cell(result.into_iter().collect()))
+            }
+        }
+        .instrument(span)
+        .await
+    }
 }
 
 /// Generates a [ReducedGraph] for the given project and endpoint containing information that is
@@ -493,9 +686,22 @@ pub async fn get_reduced_graphs_for_endpoint(
     .instrument(tracing::info_span!("generating server actions graphs"))
     .await?;
 
+    let client_references = async {
+        graphs
+            .iter()
+            .map(|graph| {
+                ClientReferencesGraph::new_with_entries(**graph, is_single_page).to_resolved()
+            })
+            .try_join()
+            .await
+    }
+    .instrument(tracing::info_span!("generating client references graphs"))
+    .await?;
+
     Ok(ReducedGraphs {
         next_dynamic,
         server_actions,
+        client_references,
     }
     .cell())
 }
