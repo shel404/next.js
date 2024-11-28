@@ -64,7 +64,9 @@ struct ModuleSet(pub HashSet<ResolvedVc<Box<dyn Module>>>);
 impl SingleModuleGraph {
     /// Walks the graph starting from the given entries and collects all reachable nodes, skipping
     /// nodes listed in `visited_modules`
+    /// If passed, `root` is connected to the entries and include in `self.entries`.
     async fn new_inner(
+        root: Option<ResolvedVc<Box<dyn Module>>>,
         entries: &Vec<ResolvedVc<Box<dyn Module>>>,
         visited_modules: &HashSet<ResolvedVc<Box<dyn Module>>>,
     ) -> Result<Vc<Self>> {
@@ -73,7 +75,8 @@ impl SingleModuleGraph {
         let mut modules: HashMap<ResolvedVc<Box<dyn Module>>, NodeIndex<u32>> = HashMap::new();
         let mut stack: Vec<_> = entries.iter().map(|e| (None, *e)).collect();
         while let Some((parent_idx, module)) = stack.pop() {
-            if visited_modules.contains(&module) {
+            // Always add entries, even if already visited in other graphs
+            if parent_idx.is_some() && visited_modules.contains(&module) {
                 continue;
             }
             if let Some(idx) = modules.get(&module) {
@@ -96,11 +99,25 @@ impl SingleModuleGraph {
                 stack.push((Some(idx), *reference));
             }
         }
+
+        let root_idx = root.and_then(|root| {
+            if !modules.contains_key(&root) {
+                let root_idx = graph.add_node(root);
+                for entry in entries {
+                    graph.add_edge(root_idx, *modules.get(entry).unwrap(), ());
+                }
+                Some((root, root_idx))
+            } else {
+                None
+            }
+        });
+
         Ok(SingleModuleGraph {
             graph,
             entries: entries
                 .iter()
                 .map(|e| (*e, *modules.get(e).unwrap()))
+                .chain(root_idx.into_iter())
                 .collect(),
         }
         .cell())
@@ -176,16 +193,18 @@ impl SingleModuleGraph {
 impl SingleModuleGraph {
     #[turbo_tasks::function]
     async fn new_with_entries(entries: Vc<Modules>) -> Result<Vc<Self>> {
-        SingleModuleGraph::new_inner(&*entries.await?, &Default::default()).await
+        SingleModuleGraph::new_inner(None, &*entries.await?, &Default::default()).await
     }
 
+    /// `root` is connected to the entries and include in `self.entries`.
     #[turbo_tasks::function]
     async fn new_with_entries_visited(
+        root: ResolvedVc<Box<dyn Module>>,
         // This must not be a Vc<Vec<_>> to ensure layout segment optimization hits the cache
         entries: Vec<ResolvedVc<Box<dyn Module>>>,
         visited_modules: Vc<ModuleSet>,
     ) -> Result<Vc<Self>> {
-        SingleModuleGraph::new_inner(&entries, &*visited_modules.await?).await
+        SingleModuleGraph::new_inner(Some(root), &entries, &*visited_modules.await?).await
     }
 }
 
@@ -200,6 +219,7 @@ async fn get_module_graph_for_endpoint(
     } = &*find_server_entries(*entry).await?;
 
     let graph = SingleModuleGraph::new_with_entries_visited(
+        *entry,
         server_utils.iter().map(|m| **m).collect(),
         Vc::cell(Default::default()),
     )
@@ -211,9 +231,9 @@ async fn get_module_graph_for_endpoint(
     for module in server_component_entries
         .iter()
         .map(|m| ResolvedVc::upcast::<Box<dyn Module>>(*m))
-        .chain(std::iter::once(entry))
     {
         let graph = SingleModuleGraph::new_with_entries_visited(
+            *entry,
             vec![*module],
             Vc::cell(visited_modules.clone()),
         )
@@ -222,6 +242,14 @@ async fn get_module_graph_for_endpoint(
         visited_modules.extend(graph.await?.graph.node_weights().copied());
         graphs.push(graph);
     }
+    let graph = SingleModuleGraph::new_with_entries_visited(
+        *entry,
+        vec![*entry],
+        Vc::cell(visited_modules.clone()),
+    )
+    .to_resolved()
+    .await?;
+    graphs.push(graph);
 
     Ok(Vc::cell(graphs))
 }
@@ -608,20 +636,22 @@ impl ReducedGraphs {
                 // Just a single graph, no need to merge results
                 Ok(graph.get_client_references_for_endpoint(entry))
             } else {
-                todo!("get_client_references_for_endpoint multiple");
-                // let result = self
-                //     .client_references
-                //     .iter()
-                //     .map(|graph| async move {
-                //         Ok(graph
-                //             .get_client_references_for_endpoint(entry)
-                //             .await?
-                //             .clone_value())
-                //     })
-                //     .try_flat_join()
-                //     .await?;
+                let results = self
+                    .client_references
+                    .iter()
+                    .map(|graph| async move {
+                        let get_client_references_for_endpoint =
+                            graph.get_client_references_for_endpoint(entry).await?;
+                        Ok(get_client_references_for_endpoint)
+                    })
+                    .try_join()
+                    .await?;
 
-                // Ok(Vc::cell(result.into_iter().collect()))
+                let mut result = results[0].clone_value();
+                for r in results.into_iter().skip(1) {
+                    result.extend(&r);
+                }
+                Ok(result.cell())
             }
         }
         .instrument(span)

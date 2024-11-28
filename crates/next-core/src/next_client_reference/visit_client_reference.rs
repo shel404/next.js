@@ -61,6 +61,25 @@ pub struct ClientReferenceGraphResult {
     pub visited_nodes: ResolvedVc<VisitedClientReferenceGraphNodes>,
 }
 
+impl ClientReferenceGraphResult {
+    /// Merges multiple return values of client_reference_graph together.
+    pub fn extend(&mut self, other: &Self) {
+        self.client_references
+            .extend(other.client_references.iter().copied());
+        for (k, v) in other.client_references_by_server_component.iter() {
+            self.client_references_by_server_component
+                .entry(*k)
+                .or_insert_with(Vec::new)
+                .extend(v);
+        }
+        self.server_component_entries
+            .extend(other.server_component_entries.iter().copied());
+        self.server_utils.extend(other.server_utils.iter().copied());
+        // This is merged already by `client_reference_graph` itself
+        self.visited_nodes = other.visited_nodes;
+    }
+}
+
 impl Default for ClientReferenceGraphResult {
     fn default() -> Self {
         ClientReferenceGraphResult {
