@@ -7,7 +7,7 @@ use next_core::{
 };
 use serde::{Deserialize, Serialize};
 use turbo_tasks::{
-    debug::ValueDebugFormat, trace::TraceRawVcs, ResolvedVc, TryFlatJoinIterExt, Vc,
+    debug::ValueDebugFormat, trace::TraceRawVcs, ResolvedVc, TryFlatJoinIterExt, ValueToString, Vc,
 };
 use turbopack::css::CssModuleAsset;
 use turbopack_core::module::Module;
@@ -16,7 +16,10 @@ use crate::module_graph::SingleModuleGraph;
 
 #[derive(Clone, Copy, Serialize, Deserialize, Eq, PartialEq, TraceRawVcs, ValueDebugFormat)]
 pub enum ClientReferenceMapType {
-    EcmascriptClientReference(ResolvedVc<EcmascriptClientReferenceModule>),
+    EcmascriptClientReference {
+        module: ResolvedVc<EcmascriptClientReferenceModule>,
+        ssr_module: ResolvedVc<Box<dyn Module>>,
+    },
     CssClientReference(ResolvedVc<CssModuleAsset>),
     ServerComponent(ResolvedVc<NextServerComponentModule>),
 }
@@ -37,7 +40,10 @@ pub async fn map_client_references(
             {
                 Ok(Some((
                     module,
-                    ClientReferenceMapType::EcmascriptClientReference(client_reference_module),
+                    ClientReferenceMapType::EcmascriptClientReference {
+                        module: client_reference_module,
+                        ssr_module: ResolvedVc::upcast(client_reference_module.await?.ssr_module),
+                    },
                 )))
             } else if let Some(css_client_reference_asset) =
                 ResolvedVc::try_downcast_type::<CssModuleAsset>(module).await?

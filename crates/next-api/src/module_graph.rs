@@ -494,7 +494,10 @@ impl ClientReferencesGraph {
                 state_map.insert(module, parent_server_component);
 
                 match module_type {
-                    Some(ClientReferenceMapType::EcmascriptClientReference(module)) => {
+                    Some(ClientReferenceMapType::EcmascriptClientReference {
+                        module,
+                        ssr_module,
+                    }) => {
                         let client_reference: ClientReference = ClientReference {
                             server_component: parent_server_component,
                             ty: ClientReferenceType::EcmascriptClientReference {
@@ -506,7 +509,7 @@ impl ClientReferencesGraph {
                         client_references_by_server_component
                             .entry(parent_server_component)
                             .or_insert_with(Vec::new)
-                            .push(*module);
+                            .push(*ssr_module);
                         GraphTraversalAction::Skip
                     }
                     Some(ClientReferenceMapType::CssClientReference(module)) => {
