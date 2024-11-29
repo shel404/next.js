@@ -7,8 +7,9 @@ use next_core::{
 };
 use serde::{Deserialize, Serialize};
 use turbo_tasks::{
-    debug::ValueDebugFormat, trace::TraceRawVcs, ResolvedVc, TryFlatJoinIterExt, ValueToString, Vc,
+    debug::ValueDebugFormat, trace::TraceRawVcs, ResolvedVc, TryFlatJoinIterExt, Vc,
 };
+use turbo_tasks_fs::FileSystemPath;
 use turbopack::css::CssModuleAsset;
 use turbopack_core::module::Module;
 
@@ -22,6 +23,8 @@ pub enum ClientReferenceMapType {
     },
     CssClientReference(ResolvedVc<CssModuleAsset>),
     ServerComponent(ResolvedVc<NextServerComponentModule>),
+    // Ideally get rid of this, it's just to detect server utilities correctly with tree shaking
+    Internal(ResolvedVc<FileSystemPath>),
 }
 
 #[turbo_tasks::value(transparent)]
@@ -60,7 +63,10 @@ pub async fn map_client_references(
                     ClientReferenceMapType::ServerComponent(server_component),
                 )))
             } else {
-                Ok(None)
+                Ok(Some((
+                    module,
+                    ClientReferenceMapType::Internal(module.ident().path().to_resolved().await?),
+                )))
             }
         })
         .try_flat_join()

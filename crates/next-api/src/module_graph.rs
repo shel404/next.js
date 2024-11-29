@@ -11,6 +11,7 @@ use next_core::{
         ServerEntries, VisitedClientReferenceGraphNodes,
     },
     next_manifests::ActionLayer,
+    next_server_component::server_component_module::NextServerComponentModule,
 };
 use petgraph::{
     graph::{DiGraph, NodeIndex},
@@ -18,7 +19,7 @@ use petgraph::{
 };
 use tracing::Instrument;
 use turbo_tasks::{
-    CollectiblesSource, FxIndexMap, ResolvedVc, TryFlatJoinIterExt, TryJoinIterExt, Vc,
+    CollectiblesSource, FxIndexMap, FxIndexSet, ResolvedVc, TryFlatJoinIterExt, TryJoinIterExt, Vc,
 };
 use turbopack_core::{
     context::AssetContext,
@@ -154,7 +155,10 @@ impl SingleModuleGraph {
         Ok(())
     }
 
-    /// Traverses all reachable nodes (once) and calls the visitor with the edge source and target
+    /// Traverses all reachable edges exactly once and calls the visitor with the edge source and
+    /// target.
+    ///
+    /// This means that target nodes can be revisited (but not recursively).
     pub fn traverse_edges_from_entry(
         &self,
         entry: ResolvedVc<Box<dyn Module>>,
@@ -470,39 +474,52 @@ impl ClientReferencesGraph {
             let data = &*self.data.await?;
             let graph = &*self.graph.await?;
 
+            let entry_path = entry.ident().path().to_resolved().await?;
+
+            let mut server_component_entries = vec![];
+            let mut server_utils = FxIndexSet::default();
             let mut client_references: Vec<ClientReference> = vec![];
             // Make sure None (for the various internal next/dist/esm/client/components/*) is
             // listed first
             let mut client_references_by_server_component =
                 FxIndexMap::from_iter([(None, Vec::new())]);
 
-            // module -> the parent server component
+            #[derive(Clone, PartialEq, Eq)]
+            enum VisitState {
+                Entry,
+                InServerComponent(ResolvedVc<NextServerComponentModule>),
+                InServerUtil,
+            }
+
+            // module -> the parent server component (if any)
             let mut state_map = HashMap::new();
             graph.traverse_edges_from_entry(entry, |(parent_module, module)| {
                 let Some(parent_module) = parent_module else {
+                    state_map.insert(module, VisitState::Entry);
                     return GraphTraversalAction::Continue;
                 };
 
-                let module_type = data.get(&module);
+                let module_type = data.get(&module).unwrap();
+                let parent_state = state_map.get(&parent_module).unwrap().clone();
                 let parent_server_component =
-                    if let Some(ClientReferenceMapType::ServerComponent(module)) = module_type {
+                    if let ClientReferenceMapType::ServerComponent(module) = module_type {
                         Some(*module)
+                    } else if let VisitState::InServerComponent(module) = parent_state {
+                        Some(module)
                     } else {
-                        state_map.get(&parent_module).copied().flatten()
+                        None
                     };
 
-                state_map.insert(module, parent_server_component);
-
                 match module_type {
-                    Some(ClientReferenceMapType::EcmascriptClientReference {
-                        module,
+                    ClientReferenceMapType::EcmascriptClientReference {
+                        module: module_ref,
                         ssr_module,
-                    }) => {
+                    } => {
                         let client_reference: ClientReference = ClientReference {
                             server_component: parent_server_component,
                             ty: ClientReferenceType::EcmascriptClientReference {
                                 parent_module,
-                                module: *module,
+                                module: *module_ref,
                             },
                         };
                         client_references.push(client_reference);
@@ -510,31 +527,48 @@ impl ClientReferencesGraph {
                             .entry(parent_server_component)
                             .or_insert_with(Vec::new)
                             .push(*ssr_module);
-                        GraphTraversalAction::Skip
+
+                        state_map.insert(module, parent_state);
+                        return GraphTraversalAction::Skip;
                     }
-                    Some(ClientReferenceMapType::CssClientReference(module)) => {
+                    ClientReferenceMapType::CssClientReference(module_ref) => {
                         let client_reference = ClientReference {
                             server_component: parent_server_component,
-                            ty: ClientReferenceType::CssClientReference(*module),
+                            ty: ClientReferenceType::CssClientReference(*module_ref),
                         };
                         client_references.push(client_reference);
-                        GraphTraversalAction::Skip
+
+                        state_map.insert(module, parent_state);
+                        return GraphTraversalAction::Skip;
                     }
-                    Some(ClientReferenceMapType::ServerComponent(_)) | None => {
-                        GraphTraversalAction::Continue
+                    ClientReferenceMapType::ServerComponent(server_component) => {
+                        server_component_entries.push(*server_component);
+
+                        state_map.insert(module, VisitState::InServerComponent(*server_component));
+                    }
+                    ClientReferenceMapType::Internal(ident_path) => {
+                        if parent_state == VisitState::Entry {
+                            if *ident_path == entry_path {
+                                // This is still the entry, skip over its the tree shaking fragments
+                                state_map.insert(module, parent_state);
+                            } else {
+                                // A server util entry
+                                server_utils.insert(module);
+                                state_map.insert(module, VisitState::InServerUtil);
+                            }
+                        } else {
+                            state_map.insert(module, parent_state);
+                        }
                     }
                 }
+                GraphTraversalAction::Continue
             })?;
 
-            let ServerEntries {
-                server_utils,
-                server_component_entries,
-            } = &*find_server_entries(*entry).await?;
             Ok(ClientReferenceGraphResult {
                 client_references,
                 client_references_by_server_component,
-                server_utils: server_utils.clone(),
-                server_component_entries: server_component_entries.clone(),
+                server_utils: server_utils.into_iter().collect(),
+                server_component_entries,
                 // TODO remove
                 visited_nodes: VisitedClientReferenceGraphNodes::empty()
                     .to_resolved()
