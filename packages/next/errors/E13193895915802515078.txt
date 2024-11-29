@@ -1,0 +1,1 @@
+Page "%s" is missing exported function "generateStaticParams()", which is required with "output: export" config.

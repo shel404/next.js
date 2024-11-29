@@ -1,0 +1,1 @@
+Image with src "%s" has both "fill" and "style.position" properties. Images with "fill" always use position absolute - it cannot be modified.

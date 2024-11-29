@@ -1,0 +1,1 @@
+Invariant attempted to optimize _next/image itself

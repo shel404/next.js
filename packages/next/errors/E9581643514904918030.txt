@@ -1,0 +1,2 @@
+A Node.js API is used (%s) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime

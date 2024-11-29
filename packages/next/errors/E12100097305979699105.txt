@@ -1,0 +1,1 @@
+Invalid \`paths\` value returned from getStaticPaths in %s.\n\`paths\` must be an array of strings or objects of shape { params: [key: string]: string }

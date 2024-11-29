@@ -1,0 +1,1 @@
+getStaticPaths is only allowed for dynamic SSG pages and was found on '%s'.\nRead more: https://nextjs.org/docs/messages/non-dynamic-getstaticpaths-usage

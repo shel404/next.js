@@ -1,0 +1,1 @@
+Failed to set Next.js data cache, items over 2MB can not be cached (%s bytes)

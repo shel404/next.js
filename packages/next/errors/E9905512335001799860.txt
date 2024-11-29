@@ -1,0 +1,1 @@
+Invalid href: "%s" and as: "%s", received relative href and external as\nSee more info: https://nextjs.org/docs/messages/invalid-relative-url-external-as

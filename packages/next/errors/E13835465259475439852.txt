@@ -1,0 +1,1 @@
+expected "app" manifest data with an "app" pageType

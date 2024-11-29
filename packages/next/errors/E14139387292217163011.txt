@@ -1,0 +1,1 @@
+invariant: attempted to buildStaticPaths without "staticPathsResult" or "getStaticPaths" %s

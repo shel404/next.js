@@ -1,0 +1,1 @@
+The \`compiler.define\` option is configured to replace the \`%s\` variable. This variable is either part of a Next.js built-in or is already configured via the \`env\` option.

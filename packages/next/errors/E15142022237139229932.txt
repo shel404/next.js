@@ -1,0 +1,1 @@
+\`unauthorized()\` is experimental and only allowed to be used when \`experimental.authInterrupts\` is enabled.

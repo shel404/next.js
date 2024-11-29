@@ -1,0 +1,1 @@
+Invariant: should handle all automatic implementable methods, got method: %s

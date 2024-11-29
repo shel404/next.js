@@ -1,0 +1,1 @@
+Pass `Infinity` instead of `false` if you do not want to revalidate by time.

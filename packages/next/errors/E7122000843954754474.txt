@@ -1,0 +1,1 @@
+Segment "%s" exports "dynamicParams: false" but the param "%s" is missing from the generated route params.

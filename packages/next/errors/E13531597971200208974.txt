@@ -1,0 +1,1 @@
+You cannot have two parallel pages that resolve to the same path. Please check %s and %s. Refer to the route group docs for more information: https://nextjs.org/docs/app/building-your-application/routing/route-groups

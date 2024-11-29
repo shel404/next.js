@@ -1,0 +1,1 @@
+Page "%s" cannot use both \`export const runtime = 'edge'\` and export \`generateStaticParams\`.

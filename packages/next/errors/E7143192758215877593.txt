@@ -1,0 +1,1 @@
+Invariant: pathname can't be empty

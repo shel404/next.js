@@ -1,0 +1,1 @@
+Image with src "%s" has both "fill" and "style.height" properties. Images with "fill" always use height 100% - it cannot be modified.

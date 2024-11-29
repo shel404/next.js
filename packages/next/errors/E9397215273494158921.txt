@@ -1,0 +1,1 @@
+Invariant: routeModule should be configured when rendering pages

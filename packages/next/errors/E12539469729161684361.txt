@@ -1,0 +1,1 @@
+Invalid i18n.domains values:\n%s\n\ndomains value must follow format { domain: 'example.fr', defaultLocale: 'fr', locales: ['fr'] }.\nSee more info here: https://nextjs.org/docs/messages/invalid-i18n-config

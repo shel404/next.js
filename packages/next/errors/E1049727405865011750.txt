@@ -1,0 +1,1 @@
+Route %s used %s without first calling \`await connection()\`.

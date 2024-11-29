@@ -1,0 +1,1 @@
+getStaticPaths can only be used with dynamic pages, not '%s'.\nLearn more: https://nextjs.org/docs/routing/dynamic-routes

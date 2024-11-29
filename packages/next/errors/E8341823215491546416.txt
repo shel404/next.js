@@ -1,0 +1,1 @@
+Invalid value returned from getStaticPaths in %s. Received %s %s

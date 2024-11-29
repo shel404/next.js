@@ -1,0 +1,2 @@
+Invalid redirect object returned from %s for %s\n%s
+See more info here: https://nextjs.org/docs/messages/invalid-redirect-gssp

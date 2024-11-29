@@ -1,0 +1,1 @@
+getStaticPaths is required for dynamic SSG pages and is missing for '%s'.\nRead more: https://nextjs.org/docs/messages/invalid-getstaticpaths-value

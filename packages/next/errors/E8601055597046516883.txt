@@ -1,0 +1,1 @@
+The Next.js Babel loader does not support .mjs or .cjs config files.

@@ -1,0 +1,1 @@
+ESM packages (%s) need to be imported. Use 'import' to reference the package instead. https://nextjs.org/docs/messages/import-esm-externals

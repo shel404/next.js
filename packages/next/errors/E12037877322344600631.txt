@@ -1,0 +1,1 @@
+Image with src "%s" is missing required "width" property.

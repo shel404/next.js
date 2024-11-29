@@ -1,0 +1,1 @@
+export const dynamic = "force-dynamic" on page "%s" cannot be used with "output: export". See more info here: https://nextjs.org/docs/advanced-features/static-html-export

@@ -1,0 +1,1 @@
+invariant SSG should not return an image cache value

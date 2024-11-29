@@ -1,0 +1,1 @@
+Segment names may not start or end with extra brackets ('%s').

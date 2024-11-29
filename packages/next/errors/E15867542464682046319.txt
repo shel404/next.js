@@ -1,0 +1,1 @@
+Circular structure in "getInitialProps" result of page "%s". https://nextjs.org/docs/messages/circular-structure

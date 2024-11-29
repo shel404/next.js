@@ -1,0 +1,1 @@
+Pattern should define hostname but found\n%s

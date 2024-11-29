@@ -1,0 +1,1 @@
+hmrRefresh can only be used in development mode. Please use refresh instead.

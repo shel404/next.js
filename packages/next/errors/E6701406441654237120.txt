@@ -1,0 +1,1 @@
+Invariant: missing bootstrap script. This is a bug in Next.js

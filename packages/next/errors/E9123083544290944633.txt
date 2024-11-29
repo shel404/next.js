@@ -1,0 +1,1 @@
+cacheLifeProfiles should always be provided. This is a bug in Next.js.

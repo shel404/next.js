@@ -1,0 +1,1 @@
+You cannot use both an required and optional catch-all route at the same level ("[...%s]" and "%s" ).

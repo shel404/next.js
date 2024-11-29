@@ -1,0 +1,1 @@
+Dynamic href \`%s\` found in <Link> while using the \`/app\` router, this is not supported. Read more: https://nextjs.org/docs/messages/app-dir-dynamic-href

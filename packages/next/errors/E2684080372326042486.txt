@@ -1,0 +1,1 @@
+A default cacheLife profile must always be provided. This is a bug in Next.js.

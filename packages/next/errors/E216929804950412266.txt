@@ -1,0 +1,3 @@
+Route %s errored during the prospective render. These errors are normally ignored and may not prevent the route from prerendering but are logged here because build debugging is enabled.
+          
+Original Error: %s

@@ -1,0 +1,1 @@
+Failed to load the `babel-plugin-react-compiler`. It is required to use the React Compiler. Please install it.

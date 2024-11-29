@@ -1,0 +1,1 @@
+Module `sharp` not found. Please run `npm install --cpu=wasm32 sharp` to install it.

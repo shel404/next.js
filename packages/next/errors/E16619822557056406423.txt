@@ -1,0 +1,1 @@
+Invariant: response is null. This is a bug in Next.js

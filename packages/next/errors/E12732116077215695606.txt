@@ -1,0 +1,1 @@
+Invariant: basePath must be set and cannot be "/"

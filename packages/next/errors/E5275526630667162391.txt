@@ -1,0 +1,1 @@
+Image with src "%s" has invalid "height" property. Expected a numeric value in pixels but received "%s".

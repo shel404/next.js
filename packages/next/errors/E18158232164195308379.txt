@@ -1,0 +1,1 @@
+Middleware is not supported in minimal mode. Please remove the `NEXT_MINIMAL` environment variable.

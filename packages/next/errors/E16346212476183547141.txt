@@ -1,0 +1,1 @@
+Page "%s" cannot use both "use client" and export function "generateStaticParams()".

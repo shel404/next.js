@@ -1,0 +1,2 @@
+Nonce value from Content-Security-Policy contained HTML escape characters.
+Learn more: https://nextjs.org/docs/messages/nonce-contained-invalid-characters

@@ -1,0 +1,1 @@
+Specified i18n should be an object received %s.\nSee more info here: https://nextjs.org/docs/messages/invalid-i18n-config

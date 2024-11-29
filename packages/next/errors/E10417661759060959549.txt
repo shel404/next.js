@@ -1,0 +1,1 @@
+Page changed from static to dynamic at runtime %s%s\nsee more here https://nextjs.org/docs/messages/app-static-to-dynamic-error

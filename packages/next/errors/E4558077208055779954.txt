@@ -1,0 +1,1 @@
+cache: 'force-cache' used on fetch for %s with 'export const fetchCache = 'only-no-store'

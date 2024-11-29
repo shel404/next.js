@@ -1,0 +1,6 @@
+Unknown cacheLife profile "%s" is not configured in next.config.js\nmodule.exports = {
+  experimental: {
+    cacheLife: {
+      "%s": ...\n    }
+  }
+}

@@ -1,0 +1,1 @@
+You cannot define a route with the same specificity as a optional catch-all route ("%s" and "%s[[...%s]]").

@@ -1,0 +1,1 @@
+A conflicting public file and page file was found for path %s https://nextjs.org/docs/messages/conflicting-public-file-page

@@ -1,0 +1,1 @@
+Invariant: attempted to hard navigate to the same URL %s %s

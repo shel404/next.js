@@ -1,0 +1,1 @@
+Specified i18n.locales contains the following duplicate locales:\n%s\nEach locale should be listed only once.\nSee more info here: https://nextjs.org/docs/messages/invalid-i18n-config

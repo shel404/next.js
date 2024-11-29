@@ -1,0 +1,1 @@
+The stale option must be a number of seconds.

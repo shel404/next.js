@@ -1,0 +1,1 @@
+Multiple children were passed to <Link> with \`href\` of \`%s\` but only one child is supported https://nextjs.org/docs/messages/link-multiple-children%s

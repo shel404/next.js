@@ -1,0 +1,1 @@
+invariant revalidate must be a number for image-cache

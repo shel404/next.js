@@ -1,0 +1,1 @@
+The "target" property is no longer supported in %s.\nSee more info here https://nextjs.org/docs/messages/deprecated-target-config

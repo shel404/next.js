@@ -1,0 +1,1 @@
+Turbopack build failed with %s issues:\n%s

@@ -1,0 +1,1 @@
+Specified pageExtensions is an empty array. Please update it with the relevant extensions or remove it.

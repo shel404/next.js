@@ -1,0 +1,1 @@
+Invariant: postponed state should not be present on a resume request

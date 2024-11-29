@@ -1,0 +1,1 @@
+Specified assetPrefix is not a string, found type "%s" https://nextjs.org/docs/messages/invalid-assetprefix

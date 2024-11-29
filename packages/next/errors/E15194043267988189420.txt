@@ -1,0 +1,1 @@
+Image with src "%s" must use "width" and "height" properties or "layout='fill'" property.

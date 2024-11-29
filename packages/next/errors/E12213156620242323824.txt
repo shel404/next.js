@@ -1,0 +1,1 @@
+Component rendered inside next/link has to pass click event to "onClick" prop.

@@ -1,0 +1,1 @@
+The server has not been instantiated properly. https://nextjs.org/docs/messages/invalid-server-options

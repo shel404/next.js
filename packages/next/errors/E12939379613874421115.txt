@@ -1,0 +1,1 @@
+NextRouter was not mounted. https://nextjs.org/docs/messages/next-router-not-mounted

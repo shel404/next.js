@@ -1,0 +1,1 @@
+Node.js binary module ./%s is not supported in the browser. Please only use the module on server side

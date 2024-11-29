@@ -1,0 +1,1 @@
+A page's revalidate option must be seconds expressed as a natural number for %s. Mixed numbers, such as '%s', cannot be used.\nTry changing the value to '%s' or using \`Math.ceil()\` if you're computing the value.

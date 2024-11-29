@@ -1,0 +1,1 @@
+No children were passed to <Link> with \`href\` of \`%s\` but one child is required https://nextjs.org/docs/messages/link-no-children

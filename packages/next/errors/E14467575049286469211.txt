@@ -1,0 +1,1 @@
+Image with src "%s" cannot end with a space or control character. Use src.trimEnd() to remove it or encodeURIComponent(src) to keep it.

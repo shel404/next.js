@@ -1,0 +1,1 @@
+Specified pageExtensions is not an array of strings, found "%s" of type "%s". Please update this config or remove it.

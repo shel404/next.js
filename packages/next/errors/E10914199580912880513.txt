@@ -1,0 +1,1 @@
+`getInitialProps` in Document component is not supported with the Edge Runtime.

@@ -1,0 +1,1 @@
+Failed prop type: The prop \`%s\` expects a %s in \`<Link>\`, but got \`%s\` instead.%s

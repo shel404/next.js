@@ -1,0 +1,1 @@
+Specified images.loader property (%s) also requires images.path property to be assigned to a URL prefix.\nSee more info here: https://nextjs.org/docs/api-reference/next/legacy/image#loader-configuration

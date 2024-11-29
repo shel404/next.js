@@ -1,0 +1,1 @@
+If providing both the revalidate and expire options, the expire option must be greater than the revalidate option.The expire option indicates how many seconds from the start until it can no longer be used.

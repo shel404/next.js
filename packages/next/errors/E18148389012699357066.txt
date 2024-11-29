@@ -1,0 +1,1 @@
+predicate must return an absolute path or the result of calling next()

@@ -1,0 +1,1 @@
+It's currently unsupported to use "export *" in a client boundary. Please use named exports instead.

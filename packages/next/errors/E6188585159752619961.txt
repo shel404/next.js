@@ -1,0 +1,1 @@
+cacheLife() can only be called during App Router rendering at the moment.

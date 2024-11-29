@@ -1,0 +1,1 @@
+Invariant: Expected to replace all template variables, missing %s in template

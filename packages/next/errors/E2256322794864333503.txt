@@ -1,0 +1,1 @@
+Invariant: static generation store missing in %s

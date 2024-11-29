@@ -1,0 +1,1 @@
+invariant: cache entry required but not generated

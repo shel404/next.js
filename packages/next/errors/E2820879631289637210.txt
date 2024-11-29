@@ -1,0 +1,1 @@
+NextResponse.rewrite() was used in a app route handler, this is not currently supported. Please remove the invocation to continue.

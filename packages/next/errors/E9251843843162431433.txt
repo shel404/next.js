@@ -1,0 +1,1 @@
+Unknown cacheLife profile "%s" is not configured in next.config.js\nDid you mean "%s" without the spaces?

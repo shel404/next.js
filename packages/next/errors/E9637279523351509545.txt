@@ -1,0 +1,1 @@
+This loader is only usable as a module

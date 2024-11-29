@@ -1,0 +1,1 @@
+export const dynamic = "force-static"/export const revalidate not configured on route "%s" with "output: export". See more info here: https://nextjs.org/docs/advanced-features/static-html-export

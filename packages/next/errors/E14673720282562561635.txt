@@ -1,0 +1,1 @@
+The packages specified in the 'transpilePackages' conflict with the 'serverExternalPackages': %s

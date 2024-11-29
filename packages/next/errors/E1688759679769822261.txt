@@ -1,0 +1,1 @@
+The "modules.namedExport" option requires the "esModules" option to be enabled

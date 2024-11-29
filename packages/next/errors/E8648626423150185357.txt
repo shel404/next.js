@@ -1,0 +1,1 @@
+Your custom PostCSS configuration must export a \`plugins\` key.

@@ -1,0 +1,1 @@
+Pass `Infinity` instead of `false` if you want to cache on the client forever without checking with the server.

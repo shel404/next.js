@@ -1,0 +1,1 @@
+No response is returned from route handler '%s'. Ensure you return a \`Response\` or a \`NextResponse\` in all branches of your handler.

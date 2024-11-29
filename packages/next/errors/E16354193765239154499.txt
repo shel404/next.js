@@ -1,0 +1,1 @@
+You cannot have the slug names "%s" and "%s" differ only by non-word symbols within a single dynamic path

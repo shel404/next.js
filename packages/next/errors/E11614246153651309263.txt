@@ -1,0 +1,1 @@
+Invariant: static responses cannot be streamed

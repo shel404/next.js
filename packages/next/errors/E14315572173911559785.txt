@@ -1,0 +1,1 @@
+Invariant: Unexpected template variable %s

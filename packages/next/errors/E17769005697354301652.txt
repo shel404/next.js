@@ -1,0 +1,1 @@
+Invariant upgrade handler was not setup

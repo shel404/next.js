@@ -1,0 +1,1 @@
+Edge runtime is not supported with `generateStaticParams`.

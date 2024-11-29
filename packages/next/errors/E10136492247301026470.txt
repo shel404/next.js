@@ -1,0 +1,1 @@
+Next Image Optimization requires %s to be provided. Make sure you pass them as props to the \`next/image\` component. Received: %s

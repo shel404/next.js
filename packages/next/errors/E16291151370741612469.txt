@@ -1,0 +1,1 @@
+transformSync doesn't implement reading the file from filesystem

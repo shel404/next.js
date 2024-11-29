@@ -1,0 +1,1 @@
+A page's revalidate option can not be less than or equal to zero for %s. A revalidate option of zero means to revalidate after _every_ request, and implies stale data cannot be tolerated.\n\nTo never revalidate, you can set revalidate to \`false\` (only ran once at build-time).\nTo revalidate as soon as possible, you can set the value to \`1\`.

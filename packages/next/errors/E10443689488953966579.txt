@@ -1,0 +1,1 @@
+> Build directory is not writeable. https://nextjs.org/docs/messages/build-dir-not-writeable

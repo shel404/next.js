@@ -1,0 +1,1 @@
+Specified i18n.locales must be an array of locale strings e.g. ["en-US", "nl-NL"] received %s.\nSee more info here: https://nextjs.org/docs/messages/invalid-i18n-config

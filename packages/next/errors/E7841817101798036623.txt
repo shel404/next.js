@@ -1,0 +1,1 @@
+[%s]: experimental.useLightningcss does not work with postcss plugins. Please remove 'useLightningcss: true' from your configuration.

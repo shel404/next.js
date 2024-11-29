@@ -1,0 +1,1 @@
+Invalid flags should be run as node detached-flush dev ./path-to/project

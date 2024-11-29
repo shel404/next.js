@@ -1,0 +1,1 @@
+The "modules.namedExport" option requires the "modules.exportLocalsConvention" option to be "camelCaseOnly"

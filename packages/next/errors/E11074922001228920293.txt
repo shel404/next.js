@@ -1,0 +1,1 @@
+Image with src "%s" has both "fill" and "style.width" properties. Images with "fill" always use width 100% - it cannot be modified.

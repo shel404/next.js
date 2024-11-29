@@ -1,0 +1,1 @@
+Failed to parse src "%s" on \`next/image\`, protocol-relative URL (//) must be changed to an absolute URL (http:// or https://)

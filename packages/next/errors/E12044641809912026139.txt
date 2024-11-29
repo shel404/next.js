@@ -1,0 +1,1 @@
+Next.js requires react >= 18.2.0 to be installed.

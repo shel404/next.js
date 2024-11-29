@@ -1,0 +1,1 @@
+Image with src "%s" cannot start with a space or control character. Use src.trimStart() to remove it or encodeURIComponent(src) to keep it.

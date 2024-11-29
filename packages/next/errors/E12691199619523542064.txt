@@ -1,0 +1,1 @@
+invariant: imageOptimizer should not be called in minimal mode

@@ -1,0 +1,1 @@
+Invalid "experimental.cacheHandlers" provided, expected an object e.g. { default: '/my-handler.js' }, received %s

@@ -1,0 +1,1 @@
+Invalid cacheLife() option. Either pass a profile name or object.

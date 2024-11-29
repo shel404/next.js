@@ -1,0 +1,1 @@
+Image with src "%s" has both "priority" and "loading='lazy'" properties. Only one should be used.

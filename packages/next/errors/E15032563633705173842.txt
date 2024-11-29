@@ -1,0 +1,1 @@
+getStaticPaths was added without a getStaticProps in %s. Without getStaticProps, getStaticPaths does nothing

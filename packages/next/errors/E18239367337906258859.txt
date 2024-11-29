@@ -1,0 +1,1 @@
+Specified i18n.domains must be an array of domain objects e.g. [ { domain: 'example.fr', defaultLocale: 'fr', locales: ['fr'] } ] received %s.\nSee more info here: https://nextjs.org/docs/messages/invalid-i18n-config

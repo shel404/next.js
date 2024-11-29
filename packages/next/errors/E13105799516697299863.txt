@@ -1,0 +1,1 @@
+A page's revalidate option must be seconds expressed as a natural number. Mixed numbers and strings cannot be used. Received '%s' for %s

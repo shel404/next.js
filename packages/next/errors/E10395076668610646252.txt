@@ -1,0 +1,1 @@
+Invariant: App Route Route Modules cannot be used in the edge runtime

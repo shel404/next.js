@@ -1,0 +1,1 @@
+Can't use lazyRenderPagesPage in minimal mode

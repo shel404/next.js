@@ -1,0 +1,1 @@
+Invariant: chainStreams requires at least one stream

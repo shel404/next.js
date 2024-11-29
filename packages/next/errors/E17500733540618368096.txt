@@ -1,0 +1,1 @@
+notFound() is not allowed to use in root layout

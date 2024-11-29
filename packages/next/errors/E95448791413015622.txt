@@ -1,0 +1,1 @@
+Image with src "%s" has both "height" and "fill" properties. Only one should be used.

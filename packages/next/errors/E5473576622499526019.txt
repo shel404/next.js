@@ -1,0 +1,1 @@
+Route %s used %s without first calling \`await connection()\`. See more info here: https://nextjs.org/docs/messages/next-prerender-sync-request
