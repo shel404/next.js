@@ -2280,10 +2280,7 @@ export default async function build(
                             })
                           }
 
-                          if (
-                            workerResult.prerenderedRoutes &&
-                            workerResult.prerenderedRoutes.length > 0
-                          ) {
+                          if (Array.isArray(workerResult.prerenderedRoutes)) {
                             staticPaths.set(
                               originalAppPath,
                               workerResult.prerenderedRoutes
@@ -2296,9 +2293,9 @@ export default async function build(
 
                           const appConfig = workerResult.appConfig || {}
                           if (appConfig.revalidate !== 0) {
-                            const hasGenerateStaticParams =
-                              workerResult.prerenderedRoutes &&
-                              workerResult.prerenderedRoutes.length > 0
+                            const hasGenerateStaticParams = Array.isArray(
+                              workerResult.prerenderedRoutes
+                            )
 
                             if (
                               config.output === 'export' &&

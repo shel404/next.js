@@ -1385,6 +1385,9 @@ export async function buildAppStaticPaths({
     }
   )
 
+  let dynamicParams = true
+  let hasGenerateStaticParams = false
+
   for (const segment of segments) {
     // Check to see if there are any missing params for segments that have
     // dynamicParams set to false.
@@ -1405,6 +1408,17 @@ export async function buildAppStaticPaths({
         )
       }
     }
+
+    // TODO: dynamic params should be allowed to be granular per segment but
+    // we need additional information stored/leveraged in the prerender
+    // manifest to allow this behavior.
+    if (segment.config?.dynamicParams === false) {
+      dynamicParams = false
+    }
+
+    if (segment.generateStaticParams) {
+      hasGenerateStaticParams = true
+    }
   }
 
   // Determine if all the segments have had their parameters provided. If there
@@ -1420,13 +1434,6 @@ export async function buildAppStaticPaths({
         return true
       }))
 
-  // TODO: dynamic params should be allowed to be granular per segment but
-  // we need additional information stored/leveraged in the prerender
-  // manifest to allow this behavior.
-  const dynamicParams = segments.every(
-    (segment) => segment.config?.dynamicParams !== false
-  )
-
   const supportsRoutePreGeneration =
     hadAllParamsGenerated || process.env.NODE_ENV === 'production'
 
@@ -1440,7 +1447,7 @@ export async function buildAppStaticPaths({
 
   let result: PartialStaticPathsResult = {
     fallbackMode,
-    prerenderedRoutes: undefined,
+    prerenderedRoutes: hasGenerateStaticParams ? [] : undefined,
   }
 
   if (hadAllParamsGenerated && fallbackMode) {
