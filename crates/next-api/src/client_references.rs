@@ -9,13 +9,12 @@ use serde::{Deserialize, Serialize};
 use turbo_tasks::{
     debug::ValueDebugFormat, trace::TraceRawVcs, ResolvedVc, TryFlatJoinIterExt, Vc,
 };
-use turbo_tasks_fs::FileSystemPath;
 use turbopack::css::CssModuleAsset;
 use turbopack_core::module::Module;
 
 use crate::module_graph::SingleModuleGraph;
 
-#[derive(Clone, Copy, Serialize, Deserialize, Eq, PartialEq, TraceRawVcs, ValueDebugFormat)]
+#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, TraceRawVcs, ValueDebugFormat)]
 pub enum ClientReferenceMapType {
     EcmascriptClientReference {
         module: ResolvedVc<EcmascriptClientReferenceModule>,
@@ -23,8 +22,6 @@ pub enum ClientReferenceMapType {
     },
     CssClientReference(ResolvedVc<CssModuleAsset>),
     ServerComponent(ResolvedVc<NextServerComponentModule>),
-    // Ideally get rid of this, it's just to detect server utilities correctly with tree shaking
-    Internal(ResolvedVc<FileSystemPath>),
 }
 
 #[turbo_tasks::value(transparent)]
@@ -63,10 +60,7 @@ pub async fn map_client_references(
                     ClientReferenceMapType::ServerComponent(server_component),
                 )))
             } else {
-                Ok(Some((
-                    module,
-                    ClientReferenceMapType::Internal(module.ident().path().to_resolved().await?),
-                )))
+                Ok(None)
             }
         })
         .try_flat_join()

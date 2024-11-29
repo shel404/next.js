@@ -159,6 +159,8 @@ impl SingleModuleGraph {
     /// target.
     ///
     /// This means that target nodes can be revisited (but not recursively).
+    ///
+    /// Edges are traversed in reverse order, so recently added edges are added last.
     pub fn traverse_edges_from_entry(
         &self,
         entry: ResolvedVc<Box<dyn Module>>,
@@ -179,7 +181,7 @@ impl SingleModuleGraph {
         while let Some(node) = stack.pop() {
             let node_weight = *graph.node_weight(node).unwrap();
             if discovered.visit(node) {
-                for succ in graph.neighbors(node) {
+                for succ in graph.neighbors(node).collect::<Vec<_>>().into_iter().rev() {
                     let succ_weight = *graph.node_weight(succ).unwrap();
                     let action = visitor((Some(node_weight), succ_weight));
                     if !discovered.is_visited(&succ) && action == GraphTraversalAction::Continue {
@@ -474,11 +476,7 @@ impl ClientReferencesGraph {
             let data = &*self.data.await?;
             let graph = &*self.graph.await?;
 
-            let entry_path = entry.ident().path().to_resolved().await?;
-
-            let mut server_component_entries = vec![];
-            let mut server_utils = FxIndexSet::default();
-            let mut client_references: Vec<ClientReference> = vec![];
+            let mut client_references = FxIndexSet::default();
             // Make sure None (for the various internal next/dist/esm/client/components/*) is
             // listed first
             let mut client_references_by_server_component =
@@ -488,7 +486,6 @@ impl ClientReferencesGraph {
             enum VisitState {
                 Entry,
                 InServerComponent(ResolvedVc<NextServerComponentModule>),
-                InServerUtil,
             }
 
             // module -> the parent server component (if any)
@@ -499,10 +496,10 @@ impl ClientReferencesGraph {
                     return GraphTraversalAction::Continue;
                 };
 
-                let module_type = data.get(&module).unwrap();
+                let module_type = data.get(&module);
                 let parent_state = state_map.get(&parent_module).unwrap().clone();
                 let parent_server_component =
-                    if let ClientReferenceMapType::ServerComponent(module) = module_type {
+                    if let Some(ClientReferenceMapType::ServerComponent(module)) = module_type {
                         Some(*module)
                     } else if let VisitState::InServerComponent(module) = parent_state {
                         Some(module)
@@ -511,10 +508,10 @@ impl ClientReferencesGraph {
                     };
 
                 match module_type {
-                    ClientReferenceMapType::EcmascriptClientReference {
+                    Some(ClientReferenceMapType::EcmascriptClientReference {
                         module: module_ref,
                         ssr_module,
-                    } => {
+                    }) => {
                         let client_reference: ClientReference = ClientReference {
                             server_component: parent_server_component,
                             ty: ClientReferenceType::EcmascriptClientReference {
@@ -522,53 +519,41 @@ impl ClientReferencesGraph {
                                 module: *module_ref,
                             },
                         };
-                        client_references.push(client_reference);
+                        client_references.insert(client_reference);
                         client_references_by_server_component
                             .entry(parent_server_component)
                             .or_insert_with(Vec::new)
                             .push(*ssr_module);
 
                         state_map.insert(module, parent_state);
-                        return GraphTraversalAction::Skip;
+                        GraphTraversalAction::Skip
                     }
-                    ClientReferenceMapType::CssClientReference(module_ref) => {
+                    Some(ClientReferenceMapType::CssClientReference(module_ref)) => {
                         let client_reference = ClientReference {
                             server_component: parent_server_component,
                             ty: ClientReferenceType::CssClientReference(*module_ref),
                         };
-                        client_references.push(client_reference);
+                        client_references.insert(client_reference);
 
                         state_map.insert(module, parent_state);
-                        return GraphTraversalAction::Skip;
+                        GraphTraversalAction::Skip
                     }
-                    ClientReferenceMapType::ServerComponent(server_component) => {
-                        server_component_entries.push(*server_component);
-
+                    Some(ClientReferenceMapType::ServerComponent(server_component)) => {
                         state_map.insert(module, VisitState::InServerComponent(*server_component));
+                        GraphTraversalAction::Continue
                     }
-                    ClientReferenceMapType::Internal(ident_path) => {
-                        if parent_state == VisitState::Entry {
-                            if *ident_path == entry_path {
-                                // This is still the entry, skip over its the tree shaking fragments
-                                state_map.insert(module, parent_state);
-                            } else {
-                                // A server util entry
-                                server_utils.insert(module);
-                                state_map.insert(module, VisitState::InServerUtil);
-                            }
-                        } else {
-                            state_map.insert(module, parent_state);
-                        }
+                    None => {
+                        state_map.insert(module, parent_state);
+                        GraphTraversalAction::Continue
                     }
                 }
-                GraphTraversalAction::Continue
             })?;
 
             Ok(ClientReferenceGraphResult {
-                client_references,
+                client_references: client_references.into_iter().collect(),
                 client_references_by_server_component,
-                server_utils: server_utils.into_iter().collect(),
-                server_component_entries,
+                server_utils: vec![],
+                server_component_entries: vec![],
                 // TODO remove
                 visited_nodes: VisitedClientReferenceGraphNodes::empty()
                     .to_resolved()
@@ -669,9 +654,12 @@ impl ReducedGraphs {
     ) -> Result<Vc<ClientReferenceGraphResult>> {
         let span = tracing::info_span!("collect all client references for endpoint");
         async move {
-            if let [graph] = &self.client_references[..] {
+            let mut result = if let [graph] = &self.client_references[..] {
                 // Just a single graph, no need to merge results
-                Ok(graph.get_client_references_for_endpoint(entry))
+                graph
+                    .get_client_references_for_endpoint(entry)
+                    .await?
+                    .clone_value()
             } else {
                 let results = self
                     .client_references
@@ -688,8 +676,19 @@ impl ReducedGraphs {
                 for r in results.into_iter().skip(1) {
                     result.extend(&r);
                 }
-                Ok(result.cell())
-            }
+                result
+            };
+
+            // Do this separately for now, because the graph traversal order messes up the order of
+            // the server_component_entries.
+            let ServerEntries {
+                server_utils,
+                server_component_entries,
+            } = &*find_server_entries(entry).await?;
+            result.server_utils = server_utils.clone();
+            result.server_component_entries = server_component_entries.clone();
+
+            Ok(result.cell())
         }
         .instrument(span)
         .await
