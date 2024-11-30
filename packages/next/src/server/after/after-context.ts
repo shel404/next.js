@@ -30,6 +30,8 @@ export type AfterContextOpts = {
   onTaskError: RequestLifecycleOpts['onAfterTaskError'] | undefined
 }
 
+type OriginalStacks = (string | undefined)[]
+
 export class AfterContext {
   private waitUntil: RequestLifecycleOpts['waitUntil'] | undefined
   private onClose: RequestLifecycleOpts['onClose']
@@ -60,7 +62,9 @@ export class AfterContext {
       if (!this.waitUntil) {
         errorWaitUntilNotAvailable()
       }
-      this.waitUntil(task.catch((error) => this.reportTaskError(error)))
+      this.waitUntil(
+        task.catch((error) => this.reportTaskError(error, undefined))
+      )
     } else if (typeof task === 'function') {
       // TODO(after): implement tracing
       this.addCallback(task, originalStack)
@@ -107,14 +111,26 @@ export class AfterContext {
     //   after(x())
     //   await x()
 
+    let originalStacks: OriginalStacks | undefined
+    if (process.env.NODE_ENV === 'development') {
+      originalStacks = [
+        originalStack,
+        ...(afterTaskStore?.originalStacks ?? []),
+      ]
+    }
+
     const unwrappedCallback = {
       [AFTER_CALLBACK_TOP_FRAME]: async () => {
         try {
-          await afterTaskAsyncStorage.run({ rootTaskSpawnPhase }, () =>
-            callback()
-          )       
+          await afterTaskAsyncStorage.run(
+            {
+              rootTaskSpawnPhase,
+              originalStacks,
+            },
+            () => callback()
+          )
         } catch (error) {
-          this.reportTaskError(error, originalStack)
+          this.reportTaskError(error, originalStacks)
         }
       },
     }[AFTER_CALLBACK_TOP_FRAME]
@@ -147,7 +163,10 @@ export class AfterContext {
     })
   }
 
-  private reportTaskError(error: unknown, originalStack?: string) {
+  private reportTaskError(
+    error: unknown,
+    originalStacks: OriginalStacks | undefined
+  ) {
     // TODO(after): this is fine for now, but will need better intergration with our error reporting.
     // TODO(after): should we log this if we have a onTaskError callback?
     console.error(
@@ -156,7 +175,7 @@ export class AfterContext {
     )
 
     if (process.env.NODE_ENV === 'development') {
-      sendErrorToBrowser(error, originalStack)
+      sendErrorToBrowser(error, originalStacks)
     }
 
     if (this.onTaskError) {
@@ -177,7 +196,10 @@ export class AfterContext {
   }
 }
 
-function sendErrorToBrowser(error: unknown, originalStack: string | undefined) {
+function sendErrorToBrowser(
+  error: unknown,
+  originalStacks: OriginalStacks | undefined
+) {
   // TODO: we probably want to inject this as `onAfterTaskError` from NextDevServer,
   // where we have access to `bundlerService` (which has the hotReloader)
   const hotReloader: NextJsHotReloaderInterface | undefined =
@@ -186,44 +208,56 @@ function sendErrorToBrowser(error: unknown, originalStack: string | undefined) {
 
   // TODO: if the callback is unnamed, replace <unknown> with <after callback>?
 
-  // TODO: how do we add the stack for the original `after` call without making things confusing?
-  // is [...originalStack, "unstable_after", ...stackInsideCallback] enough? maybe?
-
-  // TODO: make sure it also works for nested after (because then the originalStackFrame is already polluted with after)
+  // TODO: source mapping seems a bit broken in webpack -- the bottom frame is incorrectly called "helper" Page instead of "frame".
+  // kinda looks like it's misusing the source location and it just falls into `helper`, see test/nested/page.js w/o turbo
 
   const tryPrettifyStack = (err: unknown): StackFrame[] | undefined => {
     if (!isError(err)) {
       return
     }
-    const fullErrorFrames = parseStack(err.stack)
 
-    const wrapperCallbackFrame = fullErrorFrames.findIndex(
-      (frame) => frame.methodName.endsWith(AFTER_CALLBACK_TOP_FRAME) // it might be "async [name]"
-    )
-    if (wrapperCallbackFrame === -1) {
+    const stripFramesAboveCallback = (stack: string | undefined) => {
+      const frames = parseStack(stack)
+
+      // slice off everything above the user callback -- that's next.js internals
+      const topFrameIx = frames.findIndex(
+        (frame) => frame.methodName.endsWith(AFTER_CALLBACK_TOP_FRAME) // it might be "async [name]"
+      )
+      if (topFrameIx === -1) {
+        return
+      }
+      // last index is not included, so this also omits the wrapper we add in addCallback
+      return frames.slice(0, topFrameIx)
+    }
+
+    const maybeUserFramesFromCallback = stripFramesAboveCallback(err.stack)
+    if (!maybeUserFramesFromCallback) {
+      // didn't find the top frame, something is wrong, bail out
       return
     }
-    // last index is not included, so this omits the wrapper we add in addCallback
-    const userFramesFromCallback = fullErrorFrames.slice(
-      0,
-      wrapperCallbackFrame
-    )
 
+    let userFramesFromCallback = maybeUserFramesFromCallback
+
+    if (originalStacks) {
+      for (let i = 0; i < originalStacks.length - 1; i++) {
+        const frames = stripFramesAboveCallback(originalStacks[i])
+        if (frames) {
+          userFramesFromCallback = userFramesFromCallback.concat(frames)
+        }
+      }
+    }
+
+    const originalStack = originalStacks?.at(-1)
     const originalFrames = parseStack(originalStack)
-    const afterFrame = originalFrames[0] // we capture the stack in `unstable_after`, so we only need to omit that
-    const originalCaller = originalFrames.slice(1)
 
-    const userFramesFromOriginalCaller = originalCaller.slice(
+    const userFramesFromOriginalCaller = originalFrames.slice(
       0,
-      originalCaller.findIndex(
+      originalFrames.findIndex(
         (frame) => frame.methodName === 'react-stack-bottom-frame'
       )
     )
 
-    return userFramesFromCallback.concat(
-      [afterFrame], // TODO: error overlay hides this by default
-      userFramesFromOriginalCaller
-    )
+    return userFramesFromCallback.concat(userFramesFromOriginalCaller)
   }
 
   if (isError(error)) {
@@ -234,9 +268,10 @@ function sendErrorToBrowser(error: unknown, originalStack: string | undefined) {
     }
 
     console.log('AfterContext :: reportTaskError', {
-      originalStack: originalStack,
       errorStack: origErrorStack,
+      originalStacks: originalStacks,
       finalStack: error.stack,
+      finalStack_parsed: parseStack(error.stack),
     })
   }
 
