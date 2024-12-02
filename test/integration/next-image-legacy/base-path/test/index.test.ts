@@ -389,6 +389,8 @@ function runTests(mode) {
       await assertHasRedbox(browser, {
         // Main issue here that a local run hits a Node.js bug: https://linear.app/vercel/issue/NDX-505
         fixmeStackFramesHaveBrokenSourcemaps: true,
+        // // FIXME: MULTIPLE_500
+        // pageResponseCode: [500, 500, 500, 500, 500],
       })
       expect(await getRedboxHeader(browser)).toContain(
         'Invalid src prop (https://google.com/test.png) on `next/image`, hostname "google.com" is not configured under images in your `next.config.js`'
@@ -404,6 +406,8 @@ function runTests(mode) {
       await assertHasRedbox(browser, {
         // Main issue here that a local run hits a Node.js bug: https://linear.app/vercel/issue/NDX-505
         fixmeStackFramesHaveBrokenSourcemaps: true,
+        // FIXME: MULTIPLE_500
+        // pageResponseCode: [500, 500, 500, 500, 500],
       })
       expect(await getRedboxHeader(browser)).toContain(
         'Failed to parse src "//assets.example.com/img.jpg" on `next/image`, protocol-relative URL (//) must be changed to an absolute URL (http:// or https://)'

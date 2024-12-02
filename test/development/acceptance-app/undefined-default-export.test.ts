@@ -61,6 +61,8 @@ describe('Undefined default export', () => {
     await browser.waitForElementByCss('#__next')
 
     await session.assertHasRedbox({
+      // FIXME: MULTIPLE_500
+      // pageResponseCode: isTurbopack ? [500, 500] : [500, 500, 500, 500],
       // TODO: really?
       fixmeStackFramesHaveBrokenSourcemaps: true,
     })

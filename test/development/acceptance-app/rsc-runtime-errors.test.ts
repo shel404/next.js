@@ -28,7 +28,7 @@ describe('Error overlay - RSC runtime errors', () => {
     const browser = await next.browser('/server')
 
     await assertHasRedbox(browser, {
-      fixmeStackFramesHaveBrokenSourcemaps: true,
+      pageResponseCode: 500,
     })
     const errorDescription = await getRedboxDescription(browser)
 
@@ -72,7 +72,7 @@ describe('Error overlay - RSC runtime errors', () => {
 
     const browser = await next.browser('/server')
     await assertHasRedbox(browser, {
-      fixmeStackFramesHaveBrokenSourcemaps: true,
+      pageResponseCode: 500,
     })
 
     const errorDescription = await getRedboxDescription(browser)
@@ -92,7 +92,7 @@ describe('Error overlay - RSC runtime errors', () => {
     )
     const browser = await next.browser('/server')
     await assertHasRedbox(browser, {
-      fixmeStackFramesHaveBrokenSourcemaps: true,
+      pageResponseCode: 500,
     })
 
     const source = await getRedboxSource(browser)
@@ -113,7 +113,7 @@ describe('Error overlay - RSC runtime errors', () => {
     const browser = await next.browser('/server')
 
     await assertHasRedbox(browser, {
-      fixmeStackFramesHaveBrokenSourcemaps: true,
+      pageResponseCode: 500,
     })
     const versionText = await getVersionCheckerText(browser)
     expect(versionText).toMatch(/Next.js \([\w.-]+\)/)
@@ -131,7 +131,7 @@ describe('Error overlay - RSC runtime errors', () => {
     const browser = await next.browser('/server')
 
     await assertHasRedbox(browser, {
-      fixmeStackFramesHaveBrokenSourcemaps: true,
+      pageResponseCode: 500,
     })
     const source = await getRedboxSource(browser)
     expect(source).toContain('app/server/page.js')

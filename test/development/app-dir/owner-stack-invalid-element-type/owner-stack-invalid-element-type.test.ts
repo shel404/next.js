@@ -65,7 +65,7 @@ const isOwnerStackEnabled =
       const browser = await next.browser('/rsc')
 
       await assertHasRedbox(browser, {
-        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
       })
       const stackFramesContent = await getStackFramesContent(browser)
       const source = await getRedboxSource(browser)
@@ -109,7 +109,7 @@ const isOwnerStackEnabled =
       const browser = await next.browser('/ssr')
 
       await assertHasRedbox(browser, {
-        fixmeStackFramesHaveBrokenSourcemaps: true,
+        pageResponseCode: 500,
       })
 
       const stackFramesContent = await getStackFramesContent(browser)

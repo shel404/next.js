@@ -1083,6 +1083,8 @@ describe.each(['default', 'turbo'])('ReactRefreshLogBox app %s', (mode) => {
 
       await next.patchFile('index.js', "throw new Error('module error')")
       await session.assertHasRedbox({
+        // FIXME: MULTIPLE_500
+        // pageResponseCode: isTurbopack ? [500, 500, 500] : [500, 500, 500, 500],
         fixmeStackFramesHaveBrokenSourcemaps: true,
       })
       await next.patchFile(
@@ -1127,7 +1129,7 @@ export default function Home() {
 
     // Wait for patch to apply and new error to show.
     await session.assertHasRedbox({
-      fixmeStackFramesHaveBrokenSourcemaps: true,
+      pageResponseCode: 500,
     })
     expect(await session.getRedboxSource()).toMatchInlineSnapshot(`
         "app/actions.ts (4:9) @ serverAction
@@ -1173,7 +1175,7 @@ export default function Home() {
 
     // Wait for patch to apply and new error to show.
     await session.assertHasRedbox({
-      fixmeStackFramesHaveBrokenSourcemaps: true,
+      pageResponseCode: 500,
     })
     await retry(async () => {
       expect(await session.getRedboxSource()).toMatchInlineSnapshot(`

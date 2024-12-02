@@ -19,7 +19,7 @@ describe('app dir - dynamic error trace', () => {
     const browser = await next.browser('/')
 
     await assertHasRedbox(browser, {
-      fixmeStackFramesHaveBrokenSourcemaps: true,
+      pageResponseCode: 500,
     })
 
     await expect(
